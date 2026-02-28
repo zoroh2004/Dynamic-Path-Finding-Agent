@@ -209,6 +209,15 @@ class App:
         self.agent_pos     = None
         self.agent_step    = 0
 
+    def _run_search(self, from_pos=None):
+        start = from_pos or self.start
+        h     = manhattan if self.heuristic == "Manhattan" else euclidean
+        fn    = astar if self.algorithm == "A*" else greedy_bfs
+        self.path, self.visited, self.frontier, self.m_nodes, self.m_time = \
+            fn(start, self.goal, self.rows, self.cols, self.walls, h)
+        self.m_cost = len(self.path)-1 if self.path else -1
+        self.status = f"Path found: {self.m_cost} steps." if self.path else "No path found!"
+
     def _draw_grid(self):
         path_set = set(self.path)
         front_set = set(self.frontier)
@@ -267,6 +276,83 @@ class App:
                 ly += 18
         txt("Status: " + self.status, WINDOW_H - 22, color=(240,220,80))
 
+    def _set_mode(self, mode):
+        self.draw_mode = None if self.draw_mode == mode else mode
+        self.btn_wall.active  = (self.draw_mode == "wall")
+        self.btn_erase.active = (self.draw_mode == "erase")
+        self.btn_start.active = (self.draw_mode == "set_start")
+        self.btn_goal.active  = (self.draw_mode == "set_goal")
+
+    def _handle_buttons(self, event):
+        if not (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1):
+            return
+        if self.btn_gen.clicked(event):
+            self._generate_map()
+        elif self.btn_clear.clicked(event):
+            self.walls = set()
+            self._reset_view()
+            self.status = "All walls cleared."
+        elif self.btn_wall.clicked(event):    self._set_mode("wall")
+        elif self.btn_erase.clicked(event):   self._set_mode("erase")
+        elif self.btn_start.clicked(event):   self._set_mode("set_start")
+        elif self.btn_goal.clicked(event):    self._set_mode("set_goal")
+        elif self.btn_astar.clicked(event):
+            self.algorithm = "A*"
+            self.btn_astar.active, self.btn_gbfs.active = True, False
+        elif self.btn_gbfs.clicked(event):
+            self.algorithm = "GBFS"
+            self.btn_gbfs.active, self.btn_astar.active = True, False
+        elif self.btn_manh.clicked(event):
+            self.heuristic = "Manhattan"
+            self.btn_manh.active, self.btn_eucl.active = True, False
+        elif self.btn_eucl.clicked(event):
+            self.heuristic = "Euclidean"
+            self.btn_eucl.active, self.btn_manh.active = True, False
+        elif self.btn_run.clicked(event):
+            self._reset_view()
+            self._run_search()
+        elif self.btn_dynamic.clicked(event):
+            self.dynamic_on = self.btn_dynamic.active
+            self.status = f"Dynamic Mode {'ON' if self.dynamic_on else 'OFF'}."
+        elif self.btn_play.clicked(event):
+            if not self.path: self._run_search()
+            if self.path:
+                self.agent_running = True
+                self.agent_step    = 0
+                self.status = "Agent moving..."
+        elif self.btn_reset.clicked(event):
+            self._reset_view()
+            self.status = "View reset."
+
+    def _handle_grid(self, event):
+        if event.type == pygame.MOUSEMOTION and not pygame.mouse.get_pressed()[0]:
+            return
+        if event.type not in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
+            return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button != 1:
+            return
+        mx, my = event.pos
+        if mx >= WINDOW_W - SIDEBAR_W:
+            return
+        c, r = mx // CELL_SIZE, my // CELL_SIZE
+        if not (0 <= r < self.rows and 0 <= c < self.cols):
+            return
+        cell = (r, c)
+        if self.draw_mode == "wall" and cell not in (self.start, self.goal):
+            self.walls.add(cell)
+            self._reset_view()
+        elif self.draw_mode == "erase":
+            self.walls.discard(cell)
+            self._reset_view()
+        elif self.draw_mode == "set_start" and cell not in self.walls and cell != self.goal:
+            self.start = cell
+            self._reset_view()
+            self._set_mode("set_start")
+        elif self.draw_mode == "set_goal" and cell not in self.walls and cell != self.start:
+            self.goal = cell
+            self._reset_view()
+            self._set_mode("set_goal")
+
     def run(self):
         clock = pygame.time.Clock()
         while True:
@@ -274,6 +360,10 @@ class App:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit(); sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    self._set_mode(None)
+                self._handle_buttons(event)
+                self._handle_grid(event)
             self.screen.fill(WHITE)
             self._draw_grid()
             self._draw_sidebar()
