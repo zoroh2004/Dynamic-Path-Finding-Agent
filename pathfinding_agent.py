@@ -52,3 +52,27 @@ def build_path(came_from, start, goal):
         node = came_from[node]
     path.reverse()
     return path if path[0] == start else []
+
+def greedy_bfs(start, goal, rows, cols, walls, h):
+    t0 = time.perf_counter()
+    open_list  = [(h(start, goal), start)]
+    came_from  = {start: None}
+    visited    = set()
+    count      = 0
+
+    while open_list:
+        _, current = heapq.heappop(open_list)
+        if current in visited:
+            continue
+        visited.add(current)
+        count += 1
+        if current == goal:
+            break
+        for nb in get_neighbors(current, rows, cols, walls):
+            if nb not in visited and nb not in came_from:
+                came_from[nb] = current
+                heapq.heappush(open_list, (h(nb, goal), nb))
+
+    ms       = (time.perf_counter() - t0) * 1000
+    frontier = [cell for _, cell in open_list]
+    return build_path(came_from, start, goal), visited, frontier, count, ms
