@@ -33,3 +33,22 @@ def manhattan(a, b):
 
 def euclidean(a, b):
     return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
+
+def get_neighbors(cell, rows, cols, walls):
+    r, c = cell
+    neighbors = []
+    for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
+        nr, nc = r+dr, c+dc
+        if 0 <= nr < rows and 0 <= nc < cols and (nr,nc) not in walls:
+            neighbors.append((nr, nc))
+    return neighbors
+
+def build_path(came_from, start, goal):
+    if goal not in came_from:
+        return []
+    path, node = [], goal
+    while node is not None:
+        path.append(node)
+        node = came_from[node]
+    path.reverse()
+    return path if path[0] == start else []
