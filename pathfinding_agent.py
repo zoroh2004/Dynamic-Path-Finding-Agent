@@ -76,3 +76,30 @@ def greedy_bfs(start, goal, rows, cols, walls, h):
     ms       = (time.perf_counter() - t0) * 1000
     frontier = [cell for _, cell in open_list]
     return build_path(came_from, start, goal), visited, frontier, count, ms
+
+def astar(start, goal, rows, cols, walls, h):
+    t0 = time.perf_counter()
+    open_list  = [(0, start)]
+    came_from  = {start: None}
+    g_cost     = {start: 0}
+    visited    = set()
+    count      = 0
+
+    while open_list:
+        _, current = heapq.heappop(open_list)
+        if current in visited:
+            continue
+        visited.add(current)
+        count += 1
+        if current == goal:
+            break
+        for nb in get_neighbors(current, rows, cols, walls):
+            new_g = g_cost[current] + 1
+            if nb not in g_cost or new_g < g_cost[nb]:
+                g_cost[nb]    = new_g
+                came_from[nb] = current
+                heapq.heappush(open_list, (new_g + h(nb, goal), nb))
+
+    ms       = (time.perf_counter() - t0) * 1000
+    frontier = [cell for _, cell in open_list]
+    return build_path(came_from, start, goal), visited, frontier, count, ms
