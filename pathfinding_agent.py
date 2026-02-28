@@ -103,3 +103,28 @@ def astar(start, goal, rows, cols, walls, h):
     ms       = (time.perf_counter() - t0) * 1000
     frontier = [cell for _, cell in open_list]
     return build_path(came_from, start, goal), visited, frontier, count, ms
+
+class Button:
+    def __init__(self, x, y, w, h, label, toggle=False):
+        self.rect   = pygame.Rect(x, y, w, h)
+        self.label  = label
+        self.toggle = toggle
+        self.active = False
+        self.font   = pygame.font.SysFont("Arial", 13)
+
+    def draw(self, screen):
+        if self.active and self.toggle:
+            color = BTN_ON
+        elif self.rect.collidepoint(pygame.mouse.get_pos()):
+            color = BTN_HOVER
+        else:
+            color = BTN_NORMAL
+        pygame.draw.rect(screen, color, self.rect, border_radius=5)
+        pygame.draw.rect(screen, GRAY,  self.rect, 1, border_radius=5)
+        t = self.font.render(self.label, True, WHITE)
+        screen.blit(t, t.get_rect(center=self.rect.center))
+
+    def clicked(self, event):
+        return (event.type == pygame.MOUSEBUTTONDOWN
+                and event.button == 1
+                and self.rect.collidepoint(event.pos))
