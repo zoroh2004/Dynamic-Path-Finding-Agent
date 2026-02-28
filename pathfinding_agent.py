@@ -209,6 +209,64 @@ class App:
         self.agent_pos     = None
         self.agent_step    = 0
 
+    def _draw_grid(self):
+        path_set = set(self.path)
+        front_set = set(self.frontier)
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell = (r, c)
+                rect = pygame.Rect(c*CELL_SIZE, r*CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                if cell in self.walls:          color = COLOR_WALL
+                elif cell == self.start:        color = COLOR_START
+                elif cell == self.goal:         color = COLOR_GOAL
+                elif cell == self.agent_pos:    color = COLOR_AGENT
+                elif cell in path_set:          color = COLOR_PATH
+                elif cell in front_set:         color = COLOR_FRONTIER
+                elif cell in self.visited:      color = COLOR_VISITED
+                else:                           color = COLOR_EMPTY
+                pygame.draw.rect(self.screen, color, rect)
+                pygame.draw.rect(self.screen, GRAY,  rect, 1)
+        for cell, lbl in [(self.start,"S"), (self.goal,"G")]:
+            r, c = cell
+            rect = pygame.Rect(c*CELL_SIZE, r*CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            t = self.font_s.render(lbl, True, WHITE)
+            self.screen.blit(t, t.get_rect(center=rect.center))
+
+    def _draw_sidebar(self):
+        px = WINDOW_W - SIDEBAR_W
+        pygame.draw.rect(self.screen, PANEL_BG, pygame.Rect(px, 0, SIDEBAR_W, WINDOW_H))
+        def txt(msg, y, color=TEXT_WHITE, font=None):
+            f = font or self.font_s
+            self.screen.blit(f.render(msg, True, color), (px+10, y))
+        txt("Pathfinding Agent", 10, color=(80,200,255), font=self.font_l)
+        txt("Map",       50,  font=self.font_m)
+        txt("Tools",    140,  font=self.font_m)
+        txt("Algorithm", 305, font=self.font_m)
+        txt("Heuristic", 390, font=self.font_m)
+        txt("Run",       477, font=self.font_m)
+        for btn in self.buttons:
+            btn.draw(self.screen)
+        txt("Metrics", 645, color=(80,200,255), font=self.font_m)
+        txt(f"Nodes expanded : {self.m_nodes}", 668)
+        txt(f"Path cost      : {self.m_cost if self.m_cost >= 0 else 'N/A'}", 686)
+        txt(f"Time (ms)      : {self.m_time:.2f}", 704)
+        txt(f"Algorithm      : {self.algorithm}", 722)
+        legend = [
+            (COLOR_START, "Start"), (COLOR_GOAL, "Goal"), (COLOR_PATH, "Path"),
+            (COLOR_FRONTIER, "Frontier (queue)"), (COLOR_VISITED, "Visited"),
+            (COLOR_WALL, "Wall"), (COLOR_AGENT, "Agent"),
+        ]
+        lx, ly = px+10, WINDOW_H - 170
+        txt("── Legend ──", ly-18, color=(80,200,255), font=self.font_m)
+        for color, name in legend:
+            pygame.draw.rect(self.screen, color, pygame.Rect(lx, ly, 14, 14), border_radius=3)
+            txt(name, ly, color=TEXT_WHITE)
+            lx += 18 + self.font_s.size(name)[0] + 12
+            if lx > WINDOW_W - 20:
+                lx = px + 10
+                ly += 18
+        txt("Status: " + self.status, WINDOW_H - 22, color=(240,220,80))
+
     def run(self):
         clock = pygame.time.Clock()
         while True:
@@ -217,6 +275,8 @@ class App:
                 if event.type == pygame.QUIT:
                     pygame.quit(); sys.exit()
             self.screen.fill(WHITE)
+            self._draw_grid()
+            self._draw_sidebar()
             pygame.display.flip()
 
 if __name__ == "__main__":
