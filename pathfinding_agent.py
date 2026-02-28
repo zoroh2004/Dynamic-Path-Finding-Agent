@@ -128,3 +128,96 @@ class Button:
         return (event.type == pygame.MOUSEBUTTONDOWN
                 and event.button == 1
                 and self.rect.collidepoint(event.pos))
+
+class App:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
+        pygame.display.set_caption("Dynamic Pathfinding Agent")
+        self.font_s = pygame.font.SysFont("Arial", 13)
+        self.font_m = pygame.font.SysFont("Arial", 15, bold=True)
+        self.font_l = pygame.font.SysFont("Arial", 19, bold=True)
+
+        self.rows  = 24
+        self.cols  = 33
+        self.walls = set()
+        self.start = (0, 0)
+        self.goal  = (self.rows-1, self.cols-1)
+        self.path     = []
+        self.visited  = set()
+        self.frontier = []
+        self.m_nodes = 0
+        self.m_cost  = 0
+        self.m_time  = 0.0
+        self.algorithm = "A*"
+        self.heuristic = "Manhattan"
+        self.draw_mode = None
+        self.dynamic_on    = False
+        self.agent_running = False
+        self.agent_pos     = None
+        self.agent_step    = 0
+        self.spawn_prob    = 0.04
+        self.status = "generate a map or draw walls, then click run search."
+        self._make_buttons()
+        self._generate_map()
+
+    def _make_buttons(self):
+        x  = WINDOW_W - SIDEBAR_W + 10
+        bw = SIDEBAR_W - 20
+        bh = 30
+        def B(label, y, toggle=False):
+            return Button(x, y, bw, bh, label, toggle)
+        self.btn_gen     = B("Generate Random Map",  70)
+        self.btn_clear   = B("Clear Walls",         108)
+        self.btn_wall    = B("Draw Walls",   155, toggle=True)
+        self.btn_erase   = B("Erase Walls",  193, toggle=True)
+        self.btn_start   = B("Set Start",    231, toggle=True)
+        self.btn_goal    = B("Set Goal",     269, toggle=True)
+        self.btn_astar   = B("A*",           318, toggle=True)
+        self.btn_gbfs    = B("GBFS",         356, toggle=True)
+        self.btn_astar.active = True
+        self.btn_manh    = B("Manhattan",    404, toggle=True)
+        self.btn_eucl    = B("Euclidean",    442, toggle=True)
+        self.btn_manh.active = True
+        self.btn_run     = B("Run Search",   490)
+        self.btn_dynamic = B("Dynamic Mode", 528, toggle=True)
+        self.btn_play    = B("Play Agent",   566)
+        self.btn_reset   = B("Reset View",   604)
+        self.buttons = [
+            self.btn_gen, self.btn_clear,
+            self.btn_wall, self.btn_erase, self.btn_start, self.btn_goal,
+            self.btn_astar, self.btn_gbfs,
+            self.btn_manh, self.btn_eucl,
+            self.btn_run, self.btn_dynamic, self.btn_play, self.btn_reset,
+        ]
+
+    def _generate_map(self, density=0.30):
+        self.walls = set()
+        for r in range(self.rows):
+            for c in range(self.cols):
+                if (r,c) not in (self.start, self.goal):
+                    if random.random() < density:
+                        self.walls.add((r,c))
+        self._reset_view()
+        self.status = "New map generated."
+
+    def _reset_view(self):
+        self.path = []
+        self.visited  = set()
+        self.frontier = []
+        self.agent_running = False
+        self.agent_pos     = None
+        self.agent_step    = 0
+
+    def run(self):
+        clock = pygame.time.Clock()
+        while True:
+            clock.tick(60)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit(); sys.exit()
+            self.screen.fill(WHITE)
+            pygame.display.flip()
+
+if __name__ == "__main__":
+    App().run()
