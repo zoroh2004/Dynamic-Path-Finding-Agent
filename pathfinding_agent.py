@@ -218,6 +218,36 @@ class App:
         self.m_cost = len(self.path)-1 if self.path else -1
         self.status = f"Path found: {self.m_cost} steps." if self.path else "No path found!"
 
+    def _move_agent(self):
+        if self.agent_step >= len(self.path):
+            self.agent_running = False
+            self.status = "Agent reached the goal!"
+            return
+        self.agent_pos   = self.path[self.agent_step]
+        self.agent_step += 1
+        if random.random() < self.spawn_prob:
+            new_wall = self._pick_empty_cell()
+            if new_wall:
+                self.walls.add(new_wall)
+                remaining = self.path[self.agent_step:]
+                if new_wall in remaining:
+                    self.status = "Blocked! Re-planning..."
+                    self._run_search(from_pos=self.agent_pos)
+                    self.agent_step = 0
+                    if not self.path:
+                        self.agent_running = False
+                        self.status = "No route to goal."
+
+    def _pick_empty_cell(self):
+        options = [
+            (r,c) for r in range(self.rows) for c in range(self.cols)
+            if (r,c) not in self.walls
+            and (r,c) != self.start
+            and (r,c) != self.goal
+            and (r,c) != self.agent_pos
+        ]
+        return random.choice(options) if options else None
+
     def _draw_grid(self):
         path_set = set(self.path)
         front_set = set(self.frontier)
@@ -354,9 +384,11 @@ class App:
             self._set_mode("set_goal")
 
     def run(self):
-        clock = pygame.time.Clock()
+        clock      = pygame.time.Clock()
+        step_timer = 0
+        STEP_MS    = 200
         while True:
-            clock.tick(60)
+            dt = clock.tick(60)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit(); sys.exit()
@@ -364,6 +396,11 @@ class App:
                     self._set_mode(None)
                 self._handle_buttons(event)
                 self._handle_grid(event)
+            if self.agent_running and self.dynamic_on:
+                step_timer += dt
+                if step_timer >= STEP_MS:
+                    step_timer = 0
+                    self._move_agent()
             self.screen.fill(WHITE)
             self._draw_grid()
             self._draw_sidebar()
