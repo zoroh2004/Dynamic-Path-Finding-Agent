@@ -27,3 +27,9 @@ TEXT_WHITE = (220, 230, 240)
 BTN_NORMAL = (60,  80, 110)
 BTN_HOVER  = (80, 100, 140)
 BTN_ON     = (50, 180,  80)
+
+def manhattan(a, b):
+    return abs(a[0]-b[0]) + abs(a[1]-b[1])
+
+def euclidean(a, b):
+    return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
