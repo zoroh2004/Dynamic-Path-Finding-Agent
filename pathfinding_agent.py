@@ -225,7 +225,7 @@ class App:
             return
         self.agent_pos   = self.path[self.agent_step]
         self.agent_step += 1
-        if random.random() < self.spawn_prob:
+        if random.random() < self.spawn_prob and self.dynamic_on:
             new_wall = self._pick_empty_cell()
             if new_wall:
                 self.walls.add(new_wall)
@@ -342,6 +342,7 @@ class App:
             self._reset_view()
             self._run_search()
         elif self.btn_dynamic.clicked(event):
+            self.btn_dynamic.active = not self.btn_dynamic.active
             self.dynamic_on = self.btn_dynamic.active
             self.status = f"Dynamic Mode {'ON' if self.dynamic_on else 'OFF'}."
         elif self.btn_play.clicked(event):
@@ -396,7 +397,7 @@ class App:
                     self._set_mode(None)
                 self._handle_buttons(event)
                 self._handle_grid(event)
-            if self.agent_running and self.dynamic_on:
+            if self.agent_running:
                 step_timer += dt
                 if step_timer >= STEP_MS:
                     step_timer = 0
